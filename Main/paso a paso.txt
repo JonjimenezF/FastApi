@@ -3,6 +3,9 @@ abrir cmd desde la carpeta ferremas
 ("PS C:\Users\jimen\OneDrive\Escritorio\Ferremas>")
 
 Paso 2:
+Crear el entorno virtual Python -m venv env
+
+Paso 2:
 para activar el entorno virtual escribir .\env\Scripts\actívate
 
 Paso 3:
