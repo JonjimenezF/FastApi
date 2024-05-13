@@ -58,7 +58,7 @@ async def crear_producto(nombre: str, descripcion: str, codigo_producto: str, id
             raise HTTPException(status_code=response.status_code, detail="Error al crear producto")
 
 @app.put("/productos/{producto_id}")
-async def actualizar_producto(id_producto: int, nombre: str, descripcion: str, codigo_producto: str, id_marca: int, id_categoria: int, stock: str, imagen: str, precio: str):
+async def actualizar_producto(producto_id: int, nombre: str, descripcion: str, codigo_producto: str, id_marca: int, id_categoria: int, stock: str, imagen: str, precio: str):
     async with httpx.AsyncClient() as client:
         headers = {"apikey": SUPABASE_API_KEY}
         data = {
@@ -71,9 +71,7 @@ async def actualizar_producto(id_producto: int, nombre: str, descripcion: str, c
             "imagen": imagen,
             "precio": precio
         }
-        url = f"{SUPABASE_URL}PRODUCTO?id_producto=eq.{id_producto}"
-        response = await client.put(url, headers=headers, json=data)
-
+        response = await client.get(SUPABASE_URL + "PRODUCTO?id_producto=eq." + producto_id, headers=headers , json=data)
         if response.status_code == 200:
             producto_actualizado = response.json()
             return producto_actualizado
@@ -142,7 +140,24 @@ async def obtener_detalleProducto():
         else:
             raise HTTPException(status_code=response.status_code, detail="Error al obtener productos")
 
+@app.get("/dolar")
+async def get_daily_dollar():
+    api_key = '8db42ec4dc88e3fac4f33afaff52008f8daede54'
+    url_base = 'https://api.cmfchile.cl/api-sbifv3/recursos_api/dolar'
+    headers = {"apikey": api_key}
 
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url_base, headers=headers)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=response.status_code, detail="Error al obtener información del dólar")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=500, detail=f"Error de conexión: {str(e)}")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Error HTTP: {str(e)}")
+    
 
 # @app.get("/items/{item_id}")
 # async def read_item(item_id: int, q: Union[str, None] = None):
