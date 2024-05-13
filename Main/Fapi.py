@@ -4,8 +4,9 @@ from fastapi import FastAPI,HTTPException
 
 import httpx
 
-app = FastAPI()
 
+
+app = FastAPI()
 
 
 SUPABASE_URL = "https://dfrsqtseebonqtptjjck.supabase.co/rest/v1/"
@@ -21,6 +22,77 @@ async def obtener_productos():
             return response.json()
         else:
             raise HTTPException(status_code=response.status_code, detail="Error al obtener productos")
+        
+@app.get("/productos/{producto_id}")
+async def obtener_producto_id(producto_id: int):
+    async with httpx.AsyncClient() as client:
+        headers = {"apikey": SUPABASE_API_KEY}
+        response = await client.get(f"{SUPABASE_URL}PRODUCTO?id_producto=eq.{producto_id}", headers=headers)
+
+        if response.status_code == 200:
+            producto = response.json()
+            return producto
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Error al obtener producto")
+
+@app.post("/producto")
+async def crear_producto(nombre: str, descripcion: str, codigo_producto: str, id_marca: int, id_categoria: int, stock: str, imagen: str, precio: str):
+    async with httpx.AsyncClient() as client:
+        headers = {"apikey": SUPABASE_API_KEY}
+        data = {
+            "nombre": nombre,
+            "descripcion": descripcion,
+            "codigo_producto": codigo_producto,
+            "id_marca": id_marca,
+            "id_categoria": id_categoria,
+            "stock": stock,
+            "imagen": imagen,
+            "precio": precio
+        }
+        response = await client.post(SUPABASE_URL + "PRODUCTO", headers=headers, json=data)
+
+        if response.status_code == 201:
+            nuevo_producto = response.json()
+            return nuevo_producto
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Error al crear producto")
+
+@app.put("/productos/{producto_id}")
+async def actualizar_producto(id_producto: int, nombre: str, descripcion: str, codigo_producto: str, id_marca: int, id_categoria: int, stock: str, imagen: str, precio: str):
+    async with httpx.AsyncClient() as client:
+        headers = {"apikey": SUPABASE_API_KEY}
+        data = {
+            "nombre": nombre,
+            "descripcion": descripcion,
+            "codigo_producto": codigo_producto,
+            "id_marca": id_marca,
+            "id_categoria": id_categoria,
+            "stock": stock,
+            "imagen": imagen,
+            "precio": precio
+        }
+        url = f"{SUPABASE_URL}PRODUCTO?id_producto=eq.{id_producto}"
+        response = await client.put(url, headers=headers, json=data)
+
+        if response.status_code == 200:
+            producto_actualizado = response.json()
+            return producto_actualizado
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Error al actualizar producto")
+
+@app.delete("/productos/{producto_id}")
+async def eliminar_producto(producto_id: int):
+    async with httpx.AsyncClient() as client:
+        headers = {"apikey": SUPABASE_API_KEY}
+        response = await client.delete(f"{SUPABASE_URL}PRODUCTO?id_producto=eq.{producto_id}", headers=headers)
+
+        if response.status_code == 204:  # 204 significa "No Content" (éxito en la eliminación)
+            return {"message": "Producto eliminado correctamente"}
+        elif response.status_code == 404:  # 404 significa "Not Found" (producto no encontrado)
+            raise HTTPException(status_code=404, detail="Producto no encontrado")
+        else:
+            raise HTTPException(status_code=response.status_code, detail="Error al eliminar producto")
+        
 
 @app.get("/marca")
 async def obtener_marcas():
@@ -44,18 +116,6 @@ async def obtener_categorias():
         else:
             raise HTTPException(status_code=response.status_code, detail="Error al obtener categoria")
 
-
-
-@app.get("/precio")
-async def obtener_precio():
-    async with httpx.AsyncClient() as client:
-        headers = {"apikey": SUPABASE_API_KEY}
-        response = await client.get(SUPABASE_URL + "PRECIO", headers=headers)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise HTTPException(status_code=response.status_code, detail="Error al obtener precios")
 
 
 
@@ -84,29 +144,9 @@ async def obtener_detalleProducto():
 
 
 
-@app.get("/detallePrecio")
-async def obtener_detalle_precios():
-    async with httpx.AsyncClient() as client:
-        headers = {"apikey": SUPABASE_API_KEY}
-        response = await client.get(SUPABASE_URL + "PRECIO", headers=headers)
-
-        if response.status_code == 200:
-            precios = response.json()
-            productos = await obtener_productos()
-
-            # Unir datos de productos a los detalles de precio
-            for precio in precios:
-                id_producto = precio.get("id_producto")
-                precio["producto"] = next((producto for producto in productos if producto["id_producto"] == id_producto), None)
-                
-            return precios
-        else:
-            raise HTTPException(status_code=response.status_code, detail="Error al obtener detalle de precios")
-
 # @app.get("/items/{item_id}")
 # async def read_item(item_id: int, q: Union[str, None] = None):
 #     return {"item_id": item_id, "q": q}
-
 
 if __name__ == "__main__":
     import uvicorn
